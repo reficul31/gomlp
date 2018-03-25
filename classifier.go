@@ -26,7 +26,7 @@ func NewMLPClassifier(inputNodes, hiddenNodes, outputNodes int) (MLPClassifier, 
 	weightsHiddenOutput.Randomize(2, 1)
 
 	learningRate := 0.005
-	activationFunc := tanh
+	activationFunc := sigmoid
 
 	return MLPClassifier{
 			inputNodes,
@@ -79,7 +79,7 @@ func NewMLPClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, 
 	}
 
 	learningRate := 0.005
-	activationFunc := tanh
+	activationFunc := sigmoid
 
 	inputNodes := len(weightsInputHiddenArr[0])
 	hiddenNodes := len(weightsInputHiddenArr)
