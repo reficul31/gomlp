@@ -4,6 +4,7 @@ import "math"
 
 var precisionFactor = 0.65
 
+// NewStandardScalar return a new StandarScalar pointer
 func NewStandardScalar(columns int) *StandardScalar {
 	return &StandardScalar{
 		make([]float64, columns),
@@ -11,6 +12,7 @@ func NewStandardScalar(columns int) *StandardScalar {
 	}
 }
 
+// NewNormalizer return a new Normalizer pointer
 func NewNormalizer(columns int) *Normalizer {
 	return &Normalizer{
 		make([]float64, columns),
@@ -18,21 +20,23 @@ func NewNormalizer(columns int) *Normalizer {
 	}
 }
 
+// GreatestIntegerFunction returns the greates integer of a slice
 func GreatestIntegerFunction(data []float64) []float64 {
-	for i, _ := range data {
-		floor := math.Floor(data[i])
-		if data[i] > (floor + precisionFactor) {
-			data[i] = floor + float64(1)
+	for index := range data {
+		floor := math.Floor(data[index])
+		if data[index] > (floor + precisionFactor) {
+			data[index] = floor + float64(1)
 		} else {
-			data[i] = floor
+			data[index] = floor
 		}
 	}
 	return data
 }
 
+// Fit is used to populate the fields of StandardScalar
 func (ss *StandardScalar) Fit(data [][]float64) {
 	dataLen := len(data)
-	for j := 0;  j < len(data[0]); j++ {
+	for j := 0; j < len(data[0]); j++ {
 		var sum = 0.0
 		for i := 0; i < dataLen; i++ {
 			sum = sum + data[i][j]
@@ -40,13 +44,14 @@ func (ss *StandardScalar) Fit(data [][]float64) {
 		ss.mean[j] = sum / float64(dataLen)
 		var variance = 0.0
 		for i := 0; i < dataLen; i++ {
-			variance = variance + math.Pow((data[i][j] - ss.mean[j]), 2)
+			variance = variance + math.Pow((data[i][j]-ss.mean[j]), 2)
 		}
 		variance = variance / float64(dataLen)
 		ss.dev[j] = math.Sqrt(variance)
 	}
 }
 
+// Fit is used to populate the fields of Normalizer
 func (n *Normalizer) Fit(data [][]float64) {
 	dataLen := len(data)
 	for j := 0; j < len(data[0]); j++ {
@@ -65,12 +70,13 @@ func (n *Normalizer) Fit(data [][]float64) {
 	}
 }
 
+// Transform is used to standardize the values of the given slice
 func (ss *StandardScalar) Transform(data [][]float64) [][]float64 {
 	scaled := make([][]float64, len(data))
-	for index, _ := range data {
+	for index := range data {
 		scaled[index] = make([]float64, len(data[0]))
 	}
-	for j := 0;  j < len(data[0]); j++ {
+	for j := 0; j < len(data[0]); j++ {
 		for i := 0; i < len(data); i++ {
 			scaled[i][j] = (data[i][j] - ss.mean[j]) / ss.dev[j]
 		}
@@ -78,18 +84,19 @@ func (ss *StandardScalar) Transform(data [][]float64) [][]float64 {
 	return scaled
 }
 
+// Transform is used to normalize the values of the given slice
 func (n *Normalizer) Transform(data [][]float64, high, low float64) [][]float64 {
 	scaled := make([][]float64, len(data))
-	for index, _ := range data {
+	for index := range data {
 		scaled[index] = make([]float64, len(data[0]))
 	}
-	for j := 0;  j < len(data[0]); j++ {
+	for j := 0; j < len(data[0]); j++ {
 		for i := 0; i < len(data); i++ {
 			if n.min[j] == n.max[j] {
 				scaled[i][j] = (high + low) / 2
 			} else {
 				scaled[i][j] = (data[i][j] - n.min[j]) / (n.max[j] - n.min[j])
-				scaled[i][j] = (high - low)*scaled[i][j] + low
+				scaled[i][j] = (high-low)*scaled[i][j] + low
 			}
 		}
 	}

@@ -1,15 +1,16 @@
 package mlp
 
 import (
-	"os"
 	"bufio"
 	"encoding/csv"
-	"strconv"
 	"io"
-	"strings"
+	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
 
+// ReadData reads the data from a CSV file and returns the dataset
 func ReadData(filename string, stringHandler func(string) string) ([][]float64, error) {
 	var data [][]float64
 
@@ -32,7 +33,7 @@ func ReadData(filename string, stringHandler func(string) string) ([][]float64, 
 	for {
 		row, err := reader.Read()
 		if err == io.EOF {
-			break;
+			break
 		}
 
 		dataRow := make([]float64, len(row))
@@ -49,6 +50,7 @@ func ReadData(filename string, stringHandler func(string) string) ([][]float64, 
 	return data, nil
 }
 
+// WriteData writes data to a CSV file
 func WriteData(filename string, data [][]float64) error {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -68,10 +70,10 @@ func WriteData(filename string, data [][]float64) error {
 		for i := 0; i < len(row); i++ {
 			writeData[i] = strconv.FormatFloat(row[i], 'f', 6, 64)
 		}
-    	err := writer.Write(writeData)
-    	if err != nil {
-    		return err
-    	}
+		err := writer.Write(writeData)
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
