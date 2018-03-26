@@ -24,6 +24,7 @@ type Classifier struct {
 	weightsHiddenOutput *Matrix
 	learningRate        float64
 	activationFunc      ActivationFunction
+	classes             []float64
 }
 
 // StandardScalar is the Data Structure to hold the Standard Scalar Object

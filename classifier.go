@@ -1,35 +1,36 @@
 package mlp
 
 // NewClassifier return a new pointer to the Classifier Class
-func NewClassifier(inputNodes, hiddenNodes, outputNodes int) (Classifier, error) {
+func NewClassifier(inputNodes, hiddenNodes, outputNodes int) (*Classifier, error) {
 	if inputNodes < 0 || outputNodes < 0 || hiddenNodes < 0 {
-		return Classifier{}, ErrNodeValue
+		return &Classifier{}, ErrNodeValue
 	}
 
 	biasHidden, err := NewMatrix(hiddenNodes, 1)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	biasOutput, err := NewMatrix(outputNodes, 1)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	weightsInputHidden, err := NewMatrix(hiddenNodes, inputNodes)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	weightsInputHidden.Randomize(2, 1)
 
 	weightsHiddenOutput, err := NewMatrix(outputNodes, hiddenNodes)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	weightsHiddenOutput.Randomize(2, 1)
 
 	learningRate := 0.005
 	activationFunc := sigmoid
+	var classes []float64
 
-	return Classifier{
+	return &Classifier{
 		inputNodes,
 		hiddenNodes,
 		outputNodes,
@@ -39,45 +40,46 @@ func NewClassifier(inputNodes, hiddenNodes, outputNodes int) (Classifier, error)
 		weightsHiddenOutput,
 		learningRate,
 		activationFunc,
+		classes,
 	}, nil
 }
 
 // NewClassifierFromFiles return a new pointer to the Classifier Class from CSV files
-func NewClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, biasHiddenFile, biasOutputFile string, stringHandler func(string) string) (Classifier, error) {
+func NewClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, biasHiddenFile, biasOutputFile string, stringHandler func(string) string) (*Classifier, error) {
 	weightsInputHiddenArr, err := ReadData(weightsInputHiddenFile, stringHandler)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	weightsInputHidden, err := ConvertFromArray2DToMatrix(weightsInputHiddenArr)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 
 	weightsHiddenOutputArr, err := ReadData(weightsHiddenOutputFile, stringHandler)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	weightsHiddenOutput, err := ConvertFromArray2DToMatrix(weightsHiddenOutputArr)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 
 	biasHiddenArr, err := ReadData(biasHiddenFile, stringHandler)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	biasHidden, err := ConvertFromArray2DToMatrix(biasHiddenArr)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 
 	biasOutputArr, err := ReadData(biasOutputFile, stringHandler)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 	biasOutput, err := ConvertFromArray2DToMatrix(biasOutputArr)
 	if err != nil {
-		return Classifier{}, err
+		return &Classifier{}, err
 	}
 
 	learningRate := 0.005
@@ -86,8 +88,9 @@ func NewClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, bia
 	inputNodes := len(weightsInputHiddenArr[0])
 	hiddenNodes := len(weightsInputHiddenArr)
 	outputNodes := len(weightsHiddenOutputArr)
+	var classes []float64
 
-	return Classifier{
+	return &Classifier{
 		inputNodes,
 		hiddenNodes,
 		outputNodes,
@@ -97,11 +100,12 @@ func NewClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, bia
 		weightsHiddenOutput,
 		learningRate,
 		activationFunc,
+		classes,
 	}, nil
 }
 
 // Predict return a slice of the predicted output values of a trained neural network
-func (mlp Classifier) Predict(inputArr []float64) ([]float64, error) {
+func (mlp *Classifier) Predict(inputArr []float64) ([]float64, error) {
 	inputs, err := ConvertFromArrayToMatrix1D(inputArr)
 	if err != nil {
 		return make([]float64, 0), err
@@ -132,7 +136,8 @@ func (mlp Classifier) Predict(inputArr []float64) ([]float64, error) {
 }
 
 // Train is used to train a neural network
-func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
+func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
+	mlp.classes = ReturnTargetClasses(targetArr)
 	for iter := 0; iter < epochs; iter++ {
 		for range data {
 			index, inputArr := RandomDataSet(data)
@@ -142,7 +147,6 @@ func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			}
 			hidden, err := Multiply(mlp.weightsInputHidden, inputs)
 			if err != nil {
-				panic(err)
 				return err
 			}
 			hidden, err = Add(hidden, mlp.biasHidden)
@@ -154,7 +158,6 @@ func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
 
 			output, err := Multiply(mlp.weightsHiddenOutput, hidden)
 			if err != nil {
-				panic(err)
 				return err
 			}
 			output, err = Add(output, mlp.biasOutput)
@@ -177,7 +180,6 @@ func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			gradients := Map(output, mlp.activationFunc.dfunction)
 			gradients, err = Multiply(gradients, outputError)
 			if err != nil {
-				panic(err)
 				return err
 			}
 			gradients.Multiply(mlp.learningRate)
@@ -185,7 +187,6 @@ func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			hiddenT := hidden.Transpose()
 			weightHiddenOutputDeltas, err := Multiply(gradients, hiddenT)
 			if err != nil {
-				panic(err)
 				return err
 			}
 
@@ -202,14 +203,14 @@ func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			weightsHiddenOutputT := mlp.weightsHiddenOutput.Transpose()
 			hiddenErrors, err := Multiply(weightsHiddenOutputT, gradients)
 			if err != nil {
-				panic(err)
+
 				return err
 			}
 
 			hiddenGradient := Map(hidden, mlp.activationFunc.dfunction)
 			hiddenGradient, err = MapMultiply(hiddenGradient, hiddenErrors)
 			if err != nil {
-				panic(err)
+
 				return err
 			}
 			hiddenGradient.Multiply(mlp.learningRate)
@@ -217,7 +218,7 @@ func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			inputsT := inputs.Transpose()
 			weightsInputHiddenDeltas, err := Multiply(hiddenGradient, inputsT)
 			if err != nil {
-				panic(err)
+
 				return err
 			}
 			mlp.weightsInputHidden, err = Add(mlp.weightsInputHidden, weightsInputHiddenDeltas)
@@ -255,33 +256,33 @@ func (mlp Classifier) Train(data, targetArr [][]float64, epochs int) error {
 }
 
 // Score return the various parameters of a Nerual Network used for checking efficiency and accuracy
-func (mlp Classifier) Score(data [][]float64, target [][]float64) ([]float64, error) {
-	var TP, TN, FP, FN = 0, 0, 0, 0
-	var score []float64
+func (mlp *Classifier) Score(data [][]float64, target [][]float64) (float64, error) {
+	confusionMatrix := make([][]int, 2)
+	confusionMatrix[0] = make([]int, len(mlp.classes))
+	confusionMatrix[1] = make([]int, len(mlp.classes))
+	var score float64
 	for i, row := range data {
 		prediction, err := mlp.Predict(row)
 		if err != nil {
-			panic(err)
 			return score, err
 		}
 		if prediction[0] == target[i][0] {
-			if prediction[0] == 1 {
-				TP = TP + 1
-			} else {
-				TN = TN + 1
-			}
+			pos := FindInArray(mlp.classes, prediction[0])
+			confusionMatrix[1][pos] = confusionMatrix[1][pos] + 1
 		} else {
-			if prediction[0] == 1 {
-				FP = FP + 1
-			} else {
-				FN = FN + 1
-			}
+			pos := FindInArray(mlp.classes, prediction[0])
+			confusionMatrix[0][pos] = confusionMatrix[0][pos] + 1
 		}
 	}
-	sensitivity := (float64(TP) / float64(TP+FN)) * 100
-	specificity := (float64(TN) / float64(TN+FP)) * 100
-	accuracy := (float64(TP+TN) / float64(TP+TN+FP+FN)) * 100
-	efficiency := float64(sensitivity+specificity+accuracy) / 3
-	score = []float64{sensitivity, specificity, accuracy, efficiency}
+	var total, accurate = 0.0, 0.0
+	for index, row := range confusionMatrix {
+		for _, element := range row {
+			if index == 1 {
+				accurate = accurate + float64(element)
+			}
+			total = total + float64(element)
+		}
+	}
+	score = accurate / total
 	return score, nil
 }
