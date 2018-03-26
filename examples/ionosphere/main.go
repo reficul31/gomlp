@@ -41,11 +41,11 @@ func main() {
 		return
 	}
 
-	err = brain.Train(normalized, targets, epochs)
-	if err != nil {
-		panic(err)
-		return
-	}
+	// err = brain.Train(normalized, targets, epochs)
+	// if err != nil {
+	// 	panic(err)
+	// 	return
+	// }
 
 	score, err := brain.Score(normalized, targets)
 	if err != nil {
