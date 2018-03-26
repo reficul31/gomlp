@@ -35,15 +35,15 @@ func main() {
 	normalized := normalizer.Transform(inputs, 1, -1)
 
 	brain, err := mlp.NewClassifierFromFiles("weights_input_hidden.csv", "weights_hidden_output.csv", "bias_hidden.csv", "bias_output.csv", dummyHandler)
-	// brain, err := mlp.NewClassifier(34, 15, 1)
+	// brain, err := mlp.NewClassifier(34, 10, 1)
 	if err != nil {
 		panic(err)
 	}
 
-	// err = brain.Train(normalized, targets, epochs)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	err = brain.Train(normalized, targets, epochs)
+	if err != nil {
+		panic(err)
+	}
 
 	score, err := brain.Score(normalized, targets)
 	if err != nil {
