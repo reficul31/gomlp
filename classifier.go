@@ -125,7 +125,7 @@ func (mlp MLPClassifier) Predict(input_arr []float64) ([]float64, error) {
 
 	output.Map(mlp.activationFunc.function)
 
-	return output.ConvertFromMatrixToArray1D(), nil
+	return GreatestIntegerFunction(output.ConvertFromMatrixToArray1D()), nil
 }
 
 func (mlp MLPClassifier) Train(data, target_arr [][]float64, epochs int) error {
@@ -259,14 +259,18 @@ func (mlp MLPClassifier) Score(data [][]float64, target[][] float64) ([]float64,
 			panic(err)
 			return score, err
 		}
-		if prediction[0] > 0.5 && target[i][0] == 1 {
-			TP = TP + 1
-		} else if prediction[0] <= 0.5 && target[i][0] == 0 {
-			TN = TN + 1
-		} else if prediction[0] > 0.5 && target[i][0] == 0 {
-			FP = FP + 1
-		} else if prediction[0] <= 0.5 && target[i][0] == 1 {
-			FN = FN + 1
+		if prediction[0] == target[i][0] {
+			if prediction[0] == 1 {
+				TP = TP + 1
+			} else {
+				TN = TN + 1
+			}
+		} else {
+			if prediction[0] == 1 {
+				FP = FP + 1
+			} else {
+				FN = FN + 1
+			}
 		}
 	}
 	sensitivity := ( float64(TP) / float64(TP+FN) ) * 100;
