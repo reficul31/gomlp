@@ -63,7 +63,7 @@ func Add(a,b *Matrix) (*Matrix, error) {
 
 	m, _ := NewMatrix(a.rows, a.cols)
 	for i := 0; i < a.rows; i++ {
-		for j := 0; j<a.cols; j++ {
+		for j := 0; j < a.cols; j++ {
 			m.data[i][j] = a.data[i][j] + b.data[i][j]
 		}
 	}

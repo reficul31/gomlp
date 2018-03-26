@@ -2,6 +2,8 @@ package mlp
 
 import "math"
 
+var precisionFactor = 0.65
+
 func NewStandardScalar(columns int) *StandardScalar {
 	return &StandardScalar{
 		make([]float64, columns),
@@ -14,6 +16,18 @@ func NewNormalizer(columns int) *Normalizer {
 		make([]float64, columns),
 		make([]float64, columns),
 	}
+}
+
+func GreatestIntegerFunction(data []float64) []float64 {
+	for i, _ := range data {
+		floor := math.Floor(data[i])
+		if data[i] > (floor + precisionFactor) {
+			data[i] = floor + float64(1)
+		} else {
+			data[i] = floor
+		}
+	}
+	return data
 }
 
 func (ss *StandardScalar) Fit(data [][]float64) {
