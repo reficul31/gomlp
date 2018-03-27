@@ -213,3 +213,18 @@ func (m *Matrix) Map(mapFunc func(float64) float64) {
 		}
 	}
 }
+
+// FindGreatestIndex finds the greatest index of an element in the array
+func (m *Matrix) FindGreatestIndex() int {
+	var max = -999.99
+	var maxPos = 0
+	for index, row := range m.data {
+		for jindex, element := range row {
+			if element > max {
+				max = element
+				maxPos = index*len(m.data[0]) + jindex
+			}
+		}
+	}
+	return maxPos
+}

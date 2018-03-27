@@ -21,16 +21,17 @@ func NewNormalizer(columns int) *Normalizer {
 }
 
 // GreatestIntegerFunction returns the greates integer of a slice
-func GreatestIntegerFunction(data []float64) []float64 {
+func GreatestIntegerFunction(data []float64) []int {
+	output := make([]int, len(data))
 	for index := range data {
 		floor := math.Floor(data[index])
 		if data[index] > (floor + precisionFactor) {
-			data[index] = floor + float64(1)
+			output[index] = int(floor) + 1
 		} else {
-			data[index] = floor
+			output[index] = int(floor)
 		}
 	}
-	return data
+	return output
 }
 
 // Fit is used to populate the fields of StandardScalar
