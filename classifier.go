@@ -26,7 +26,7 @@ func NewClassifier(inputNodes, hiddenNodes, outputNodes int) (*Classifier, error
 	}
 	weightsHiddenOutput.Randomize(2, 1)
 
-	learningRate := 0.005
+	learningRate := 0.01
 	activationFunc := sigmoid
 	var classes []float64
 
@@ -82,7 +82,7 @@ func NewClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, bia
 		return &Classifier{}, err
 	}
 
-	learningRate := 0.005
+	learningRate := 0.01
 	activationFunc := sigmoid
 
 	inputNodes := len(weightsInputHiddenArr[0])
@@ -105,39 +105,44 @@ func NewClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, bia
 }
 
 // Predict return a slice of the predicted output values of a trained neural network
-func (mlp *Classifier) Predict(inputArr []float64) ([]float64, error) {
+func (mlp *Classifier) Predict(inputArr []float64) (int, error) {
 	inputs, err := ConvertFromArrayToMatrix1D(inputArr)
 	if err != nil {
-		return make([]float64, 0), err
+		return 0, err
 	}
 	hidden, err := Multiply(mlp.weightsInputHidden, inputs)
 	if err != nil {
-		return make([]float64, 0), err
+		return 0, err
 	}
 	hidden, err = Add(hidden, mlp.biasHidden)
 	if err != nil {
-		return make([]float64, 0), err
+		return 0, err
 	}
 
 	hidden.Map(mlp.activationFunc.function)
 
 	output, err := Multiply(mlp.weightsHiddenOutput, hidden)
 	if err != nil {
-		return make([]float64, 0), err
+		return 0, err
 	}
 	output, err = Add(output, mlp.biasOutput)
 	if err != nil {
-		return make([]float64, 0), err
+		return 0, err
 	}
 
 	output.Map(mlp.activationFunc.function)
+	if mlp.outputNodes > 1 {
+		return output.FindGreatestIndex(), nil
+	}
 
-	return GreatestIntegerFunction(output.ConvertFromMatrixToArray1D()), nil
+	outputArr := GreatestIntegerFunction(output.ConvertFromMatrixToArray1D())
+	return outputArr[0], nil
 }
 
 // Train is used to train a neural network
 func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 	mlp.classes = ReturnTargetClasses(targetArr)
+	transformedTarget := TransformTargets(targetArr, mlp.classes, mlp.outputNodes)
 	for iter := 0; iter < epochs; iter++ {
 		for range data {
 			index, inputArr := RandomDataSet(data)
@@ -166,8 +171,7 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			}
 
 			output.Map(mlp.activationFunc.function)
-
-			target, err := ConvertFromArrayToMatrix1D(targetArr[index])
+			target, err := ConvertFromArrayToMatrix1D(transformedTarget[index])
 			if err != nil {
 				return err
 			}
@@ -178,7 +182,7 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			}
 
 			gradients := Map(output, mlp.activationFunc.dfunction)
-			gradients, err = Multiply(gradients, outputError)
+			gradients, err = MapMultiply(gradients, outputError)
 			if err != nil {
 				return err
 			}
@@ -203,14 +207,12 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			weightsHiddenOutputT := mlp.weightsHiddenOutput.Transpose()
 			hiddenErrors, err := Multiply(weightsHiddenOutputT, gradients)
 			if err != nil {
-
 				return err
 			}
 
 			hiddenGradient := Map(hidden, mlp.activationFunc.dfunction)
 			hiddenGradient, err = MapMultiply(hiddenGradient, hiddenErrors)
 			if err != nil {
-
 				return err
 			}
 			hiddenGradient.Multiply(mlp.learningRate)
@@ -218,7 +220,6 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			inputsT := inputs.Transpose()
 			weightsInputHiddenDeltas, err := Multiply(hiddenGradient, inputsT)
 			if err != nil {
-
 				return err
 			}
 			mlp.weightsInputHidden, err = Add(mlp.weightsInputHidden, weightsInputHiddenDeltas)
@@ -266,11 +267,11 @@ func (mlp *Classifier) Score(data [][]float64, target [][]float64) (float64, err
 		if err != nil {
 			return score, err
 		}
-		if prediction[0] == target[i][0] {
-			pos := FindInArray(mlp.classes, prediction[0])
+		if prediction == int(target[i][0]) {
+			pos := FindInArray(mlp.classes, float64(prediction))
 			confusionMatrix[1][pos] = confusionMatrix[1][pos] + 1
 		} else {
-			pos := FindInArray(mlp.classes, prediction[0])
+			pos := FindInArray(mlp.classes, float64(prediction))
 			confusionMatrix[0][pos] = confusionMatrix[0][pos] + 1
 		}
 	}
