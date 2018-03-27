@@ -58,3 +58,21 @@ func ReturnTargetClasses(target [][]float64) []float64 {
 	})
 	return classes
 }
+
+// TransformTargets transform a 1D target array into a 2D array
+func TransformTargets(targetArr [][]float64, classes []float64, outputNodes int) [][]float64 {
+	targets := make([][]float64, len(targetArr))
+	for index, element := range targetArr {
+		targets[index] = make([]float64, outputNodes)
+		for i := range targets[index] {
+			targets[index][i] = 0
+		}
+		pos := FindInArray(classes, element[0])
+		if outputNodes > 1 {
+			targets[index][pos] = float64(1)
+		} else {
+			targets[index][0] = float64(pos)
+		}
+	}
+	return targets
+}
