@@ -20,6 +20,59 @@ func NewNormalizer(columns int) *Normalizer {
 	}
 }
 
+// NewRange returns a new Range pointer
+func NewRange() *Range {
+	return &Range{
+		999.99,
+		-999.99,
+	}
+}
+
+// UpdateRangeMatrix is used to update the range of the matrix based upon the value passed
+func (r *Range) UpdateRangeMatrix(m *Matrix) {
+	for _, row := range m.data {
+		for _, element := range row {
+			if r.min > element {
+				r.min = element
+			}
+			if r.max < element {
+				r.max = element
+			}
+		}
+	}
+}
+
+// UpdateRangeArray1D is used to update the range of the matrix based upon the value passed
+func (r *Range) UpdateRangeArray1D(arr []float64) {
+	for _, element := range arr {
+		if r.min > element {
+			r.min = element
+		}
+		if r.max < element {
+			r.max = element
+		}
+	}
+}
+
+// UpdateRangeArray2D is used to update the range of the matrix based upon the value passed
+func (r *Range) UpdateRangeArray2D(arr [][]float64) {
+	for _, row := range arr {
+		for _, element := range row {
+			if r.min > element {
+				r.min = element
+			}
+			if r.max < element {
+				r.max = element
+			}
+		}
+	}
+}
+
+// ReturnRange is used to return the max and min value flowing through the neural network
+func (r *Range) ReturnRange() (float64, float64) {
+	return r.min, r.max
+}
+
 // GreatestIntegerFunction returns the greates integer of a slice
 func GreatestIntegerFunction(data []float64) []int {
 	output := make([]int, len(data))

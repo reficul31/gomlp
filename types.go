@@ -38,3 +38,9 @@ type Normalizer struct {
 	max []float64
 	min []float64
 }
+
+// Range is the data structure to find the min and max of the values flowing through the nerual network
+type Range struct {
+	min float64
+	max float64
+}

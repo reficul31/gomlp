@@ -6,7 +6,7 @@ import (
 	mlp "github.com/reficul31/mlp_classifier"
 )
 
-var epochs = 10
+var epochs = 800
 
 func dummyHandler(input string) string {
 	return input
@@ -18,10 +18,13 @@ func main() {
 		panic(err)
 	}
 
+	mlp.RangeDetermine = mlp.NewRange()
+
 	inputs, targets := mlp.PartitionData(data, "start")
 	scalar := mlp.NewStandardScalar(len(inputs[0]))
 	scalar.Fit(inputs)
 	scaled := scalar.Transform(inputs)
+	mlp.RangeDetermine.UpdateRangeArray2D(scaled)
 
 	brain, err := mlp.NewClassifierFromFiles("weights_input_hidden.csv", "weights_hidden_output.csv", "bias_hidden.csv", "bias_output.csv", dummyHandler)
 	// brain, err := mlp.NewClassifier(28, 10, 6)
@@ -39,4 +42,6 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Score:", score)
+	min, max := mlp.RangeDetermine.ReturnRange()
+	fmt.Println("MIN:", min, "MAX:", max)
 }

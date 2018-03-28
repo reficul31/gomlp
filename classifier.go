@@ -1,5 +1,8 @@
 package mlp
 
+// RangeDetermine is used to determine the range of values taken by the neural network
+var RangeDetermine *Range
+
 // NewClassifier return a new pointer to the Classifier Class
 func NewClassifier(inputNodes, hiddenNodes, outputNodes int) (*Classifier, error) {
 	if inputNodes < 0 || outputNodes < 0 || hiddenNodes < 0 {
@@ -142,7 +145,9 @@ func (mlp *Classifier) Predict(inputArr []float64) (int, error) {
 // Train is used to train a neural network
 func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 	mlp.classes = ReturnTargetClasses(targetArr)
+	RangeDetermine.UpdateRangeArray1D(mlp.classes)
 	transformedTarget := TransformTargets(targetArr, mlp.classes, mlp.outputNodes)
+	RangeDetermine.UpdateRangeArray2D(transformedTarget)
 	for iter := 0; iter < epochs; iter++ {
 		for range data {
 			index, inputArr := RandomDataSet(data)
@@ -150,27 +155,33 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(inputs)
 			hidden, err := Multiply(mlp.weightsInputHidden, inputs)
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(hidden)
 			hidden, err = Add(hidden, mlp.biasHidden)
 			if err != nil {
 				return err
 			}
-
+			RangeDetermine.UpdateRangeMatrix(hidden)
 			hidden.Map(mlp.activationFunc.function)
+			RangeDetermine.UpdateRangeMatrix(hidden)
 
 			output, err := Multiply(mlp.weightsHiddenOutput, hidden)
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(output)
 			output, err = Add(output, mlp.biasOutput)
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(output)
 
 			output.Map(mlp.activationFunc.function)
+			RangeDetermine.UpdateRangeMatrix(output)
 			target, err := ConvertFromArrayToMatrix1D(transformedTarget[index])
 			if err != nil {
 				return err
@@ -180,24 +191,30 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(outputError)
 
 			gradients := Map(output, mlp.activationFunc.dfunction)
+			RangeDetermine.UpdateRangeMatrix(gradients)
 			gradients, err = MapMultiply(gradients, outputError)
+			RangeDetermine.UpdateRangeMatrix(gradients)
 			if err != nil {
 				return err
 			}
 			gradients.Multiply(mlp.learningRate)
+			RangeDetermine.UpdateRangeMatrix(gradients)
 
 			hiddenT := hidden.Transpose()
 			weightHiddenOutputDeltas, err := Multiply(gradients, hiddenT)
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(weightHiddenOutputDeltas)
 
 			mlp.weightsHiddenOutput, err = Add(mlp.weightsHiddenOutput, weightHiddenOutputDeltas)
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(weightHiddenOutputDeltas)
 
 			mlp.biasOutput, err = Add(mlp.biasOutput, gradients)
 			if err != nil {
@@ -209,19 +226,24 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(hiddenErrors)
 
 			hiddenGradient := Map(hidden, mlp.activationFunc.dfunction)
+			RangeDetermine.UpdateRangeMatrix(hiddenGradient)
 			hiddenGradient, err = MapMultiply(hiddenGradient, hiddenErrors)
+			RangeDetermine.UpdateRangeMatrix(hiddenGradient)
 			if err != nil {
 				return err
 			}
 			hiddenGradient.Multiply(mlp.learningRate)
+			RangeDetermine.UpdateRangeMatrix(hiddenGradient)
 
 			inputsT := inputs.Transpose()
 			weightsInputHiddenDeltas, err := Multiply(hiddenGradient, inputsT)
 			if err != nil {
 				return err
 			}
+			RangeDetermine.UpdateRangeMatrix(weightsInputHiddenDeltas)
 			mlp.weightsInputHidden, err = Add(mlp.weightsInputHidden, weightsInputHiddenDeltas)
 			if err != nil {
 				return err
@@ -285,5 +307,6 @@ func (mlp *Classifier) Score(data [][]float64, target [][]float64) (float64, err
 		}
 	}
 	score = accurate / total
+	RangeDetermine.UpdateRangeArray1D([]float64{accurate, total})
 	return score, nil
 }
