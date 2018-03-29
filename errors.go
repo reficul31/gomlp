@@ -4,7 +4,7 @@ import "errors"
 
 var (
 	// ErrNodeValue returns an error if a Node value is Negative
-	ErrNodeValue = errors.New("Node values cannot be negative")
+	ErrNodeValue = errors.New("Node values cannot be negative or zero")
 	// ErrOnlyCSVFiles returns an error when a file other than the CSV file is provided
 	ErrOnlyCSVFiles = errors.New("Only CSV files are allowed right now")
 	// ErrRowColumnRange returns an error if the Row or Columns are not in range
