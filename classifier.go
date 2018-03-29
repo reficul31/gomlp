@@ -1,105 +1,79 @@
 package mlp
 
+import "fmt"
+
 // NewClassifier return a new pointer to the Classifier Class
-func NewClassifier(inputNodes, hiddenNodes, outputNodes int) (*Classifier, error) {
-	if inputNodes < 0 || outputNodes < 0 || hiddenNodes < 0 {
+func NewClassifier(inputNodes, outputNodes int, hiddenNodes ...int) (*Classifier, error) {
+	if inputNodes < 0 || outputNodes < 0 || len(hiddenNodes) < 1 {
 		return &Classifier{}, ErrNodeValue
 	}
 
-	biasHidden, err := NewMatrix(hiddenNodes, 1)
-	if err != nil {
-		return &Classifier{}, err
-	}
-	biasOutput, err := NewMatrix(outputNodes, 1)
-	if err != nil {
-		return &Classifier{}, err
-	}
-	weightsInputHidden, err := NewMatrix(hiddenNodes, inputNodes)
-	if err != nil {
-		return &Classifier{}, err
-	}
-	weightsInputHidden.Randomize(2, 1)
+	var layers []*Layer
+	hiddenLayers := len(hiddenNodes)
 
-	weightsHiddenOutput, err := NewMatrix(outputNodes, hiddenNodes)
+	hiddenNodes = append(hiddenNodes, outputNodes)
+
+	inNodes := inputNodes
+	outNodes := hiddenNodes[0]
+	layer, err := NewLayer(inNodes, outNodes)
 	if err != nil {
 		return &Classifier{}, err
 	}
-	weightsHiddenOutput.Randomize(2, 1)
+	layers = append(layers, layer)
 
-	learningRate := 0.01
-	activationFunc := sigmoid
+	for i := 1; i < len(hiddenNodes); i++ {
+		inNodes = hiddenNodes[i-1]
+		outNodes = hiddenNodes[i]
+		layer, err = NewLayer(inNodes, outNodes)
+		if err != nil {
+			return &Classifier{}, err
+		}
+		layers = append(layers, layer)
+	}
+
 	var classes []float64
 
 	return &Classifier{
 		inputNodes,
-		hiddenNodes,
 		outputNodes,
-		biasHidden,
-		biasOutput,
-		weightsInputHidden,
-		weightsHiddenOutput,
-		learningRate,
-		activationFunc,
+		hiddenLayers,
+		layers,
 		classes,
 	}, nil
 }
 
 // NewClassifierFromFiles return a new pointer to the Classifier Class from CSV files
-func NewClassifierFromFiles(weightsInputHiddenFile, weightsHiddenOutputFile, biasHiddenFile, biasOutputFile string, stringHandler func(string) string) (*Classifier, error) {
-	weightsInputHiddenArr, err := ReadData(weightsInputHiddenFile, stringHandler)
-	if err != nil {
-		return &Classifier{}, err
-	}
-	weightsInputHidden, err := ConvertFromArray2DToMatrix(weightsInputHiddenArr)
-	if err != nil {
-		return &Classifier{}, err
+func NewClassifierFromFiles(hiddenLayers int) (*Classifier, error) {
+	var layers []*Layer
+
+	for i := 0; i <= hiddenLayers; i++ {
+		weightsArr, err := ReadData(fmt.Sprintf("weights_matrix%d.csv", i+1))
+		if err != nil {
+			return nil, err
+		}
+
+		biasArr, err := ReadData(fmt.Sprintf("bias_matrix%d.csv", i+1))
+		if err != nil {
+			return nil, err
+		}
+
+		layer, err := NewLayerFromArrays(weightsArr, biasArr)
+		if err != nil {
+			return nil, err
+		}
+
+		layers = append(layers, layer)
 	}
 
-	weightsHiddenOutputArr, err := ReadData(weightsHiddenOutputFile, stringHandler)
-	if err != nil {
-		return &Classifier{}, err
-	}
-	weightsHiddenOutput, err := ConvertFromArray2DToMatrix(weightsHiddenOutputArr)
-	if err != nil {
-		return &Classifier{}, err
-	}
-
-	biasHiddenArr, err := ReadData(biasHiddenFile, stringHandler)
-	if err != nil {
-		return &Classifier{}, err
-	}
-	biasHidden, err := ConvertFromArray2DToMatrix(biasHiddenArr)
-	if err != nil {
-		return &Classifier{}, err
-	}
-
-	biasOutputArr, err := ReadData(biasOutputFile, stringHandler)
-	if err != nil {
-		return &Classifier{}, err
-	}
-	biasOutput, err := ConvertFromArray2DToMatrix(biasOutputArr)
-	if err != nil {
-		return &Classifier{}, err
-	}
-
-	learningRate := 0.01
-	activationFunc := sigmoid
-
-	inputNodes := len(weightsInputHiddenArr[0])
-	hiddenNodes := len(weightsInputHiddenArr)
-	outputNodes := len(weightsHiddenOutputArr)
+	inputNodes := layers[0].inputNodes
+	outputNodes := layers[len(layers)-1].outputNodes
 	var classes []float64
 
 	return &Classifier{
 		inputNodes,
-		hiddenNodes,
 		outputNodes,
-		biasHidden,
-		biasOutput,
-		weightsInputHidden,
-		weightsHiddenOutput,
-		learningRate,
-		activationFunc,
+		hiddenLayers,
+		layers,
 		classes,
 	}, nil
 }
@@ -110,27 +84,15 @@ func (mlp *Classifier) Predict(inputArr []float64) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	hidden, err := Multiply(mlp.weightsInputHidden, inputs)
-	if err != nil {
-		return 0, err
-	}
-	hidden, err = Add(hidden, mlp.biasHidden)
-	if err != nil {
-		return 0, err
+
+	output := inputs
+	for _, layer := range mlp.layers {
+		output, err = layer.FeedForward(output)
+		if err != nil {
+			return 0, err
+		}
 	}
 
-	hidden.Map(mlp.activationFunc.function)
-
-	output, err := Multiply(mlp.weightsHiddenOutput, hidden)
-	if err != nil {
-		return 0, err
-	}
-	output, err = Add(output, mlp.biasOutput)
-	if err != nil {
-		return 0, err
-	}
-
-	output.Map(mlp.activationFunc.function)
 	if mlp.outputNodes > 1 {
 		return output.FindGreatestIndex(), nil
 	}
@@ -150,107 +112,76 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 			if err != nil {
 				return err
 			}
-			hidden, err := Multiply(mlp.weightsInputHidden, inputs)
-			if err != nil {
-				return err
-			}
-			hidden, err = Add(hidden, mlp.biasHidden)
-			if err != nil {
-				return err
+
+			var outputs []*Matrix
+
+			output := inputs
+			outputs = append(outputs, output)
+
+			for _, layer := range mlp.layers {
+				output, err = layer.FeedForward(output)
+				if err != nil {
+					return err
+				}
+
+				outputs = append(outputs, output)
 			}
 
-			hidden.Map(mlp.activationFunc.function)
-
-			output, err := Multiply(mlp.weightsHiddenOutput, hidden)
-			if err != nil {
-				return err
-			}
-			output, err = Add(output, mlp.biasOutput)
-			if err != nil {
-				return err
-			}
-
-			output.Map(mlp.activationFunc.function)
 			target, err := ConvertFromArrayToMatrix1D(transformedTarget[index])
 			if err != nil {
 				return err
 			}
 
-			outputError, err := Subtract(target, output)
+			layerError, err := Subtract(target, output)
 			if err != nil {
 				return err
 			}
 
-			gradients := Map(output, mlp.activationFunc.dfunction)
-			gradients, err = MapMultiply(gradients, outputError)
-			if err != nil {
-				return err
-			}
-			gradients.Multiply(mlp.learningRate)
+			var layerErrors []*Matrix
+			layerErrors = append(layerErrors, layerError)
+			for j := len(mlp.layers) - 1; j > 0; j-- {
+				layerError, err = mlp.layers[j].BackPropogate(outputs[j+1], outputs[j], layerError)
+				if err != nil {
+					return err
+				}
 
-			hiddenT := hidden.Transpose()
-			weightHiddenOutputDeltas, err := Multiply(gradients, hiddenT)
-			if err != nil {
-				return err
-			}
+				layerErrors = append(layerErrors, layerError)
 
-			mlp.weightsHiddenOutput, err = Add(mlp.weightsHiddenOutput, weightHiddenOutputDeltas)
-			if err != nil {
-				return err
-			}
+				weightsT := mlp.layers[j].weights.Transpose()
 
-			mlp.biasOutput, err = Add(mlp.biasOutput, gradients)
-			if err != nil {
-				return err
-			}
-
-			weightsHiddenOutputT := mlp.weightsHiddenOutput.Transpose()
-			hiddenErrors, err := Multiply(weightsHiddenOutputT, gradients)
-			if err != nil {
-				return err
-			}
-
-			hiddenGradient := Map(hidden, mlp.activationFunc.dfunction)
-			hiddenGradient, err = MapMultiply(hiddenGradient, hiddenErrors)
-			if err != nil {
-				return err
-			}
-			hiddenGradient.Multiply(mlp.learningRate)
-
-			inputsT := inputs.Transpose()
-			weightsInputHiddenDeltas, err := Multiply(hiddenGradient, inputsT)
-			if err != nil {
-				return err
-			}
-			mlp.weightsInputHidden, err = Add(mlp.weightsInputHidden, weightsInputHiddenDeltas)
-			if err != nil {
-				return err
-			}
-			mlp.biasHidden, err = Add(mlp.biasHidden, hiddenGradient)
-			if err != nil {
-				return err
+				layerError, err = Multiply(weightsT, layerError)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 
-	err := WriteData("weights_input_hidden.csv", mlp.weightsInputHidden.ConvertFromMatrixToArray2D())
-	if err != nil {
-		return err
-	}
+	// err := WriteData("weights_input_hidden.csv", mlp.weightsInputHidden.ConvertFromMatrixToArray2D())
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = WriteData("weights_hidden_output.csv", mlp.weightsHiddenOutput.ConvertFromMatrixToArray2D())
-	if err != nil {
-		return err
-	}
+	// err = WriteData("weights_hidden_output.csv", mlp.weightsHiddenOutput.ConvertFromMatrixToArray2D())
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = WriteData("bias_hidden.csv", mlp.biasHidden.ConvertFromMatrixToArray2D())
-	if err != nil {
-		return err
-	}
+	// err = WriteData("bias_hidden.csv", mlp.biasHidden.ConvertFromMatrixToArray2D())
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = WriteData("bias_output.csv", mlp.biasOutput.ConvertFromMatrixToArray2D())
-	if err != nil {
-		return err
+	// err = WriteData("bias_output.csv", mlp.biasOutput.ConvertFromMatrixToArray2D())
+	// if err != nil {
+	// 	return err
+	// }
+
+	for index, layer := range mlp.layers {
+		err := layer.WriteDataToFile(index + 1)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
