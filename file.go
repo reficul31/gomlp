@@ -11,7 +11,7 @@ import (
 )
 
 // ReadData reads the data from a CSV file and returns the dataset
-func ReadData(filename string, stringHandler func(string) string) ([][]float64, error) {
+func ReadData(filename string) ([][]float64, error) {
 	var data [][]float64
 
 	file, err := os.Open(filename)
@@ -38,7 +38,6 @@ func ReadData(filename string, stringHandler func(string) string) ([][]float64, 
 
 		dataRow := make([]float64, len(row))
 		for i := 0; i < len(row); i++ {
-			row[i] = stringHandler(row[i])
 			dataRow[i], err = strconv.ParseFloat(row[i], 64)
 			if err != nil {
 				return data, err
