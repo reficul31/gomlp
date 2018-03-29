@@ -6,14 +6,10 @@ import (
 	mlp "github.com/reficul31/mlp_classifier"
 )
 
-var epochs = 10
-
-func dummyHandler(input string) string {
-	return input
-}
+var epochs = 100
 
 func main() {
-	data, err := mlp.ReadData("training.csv", dummyHandler)
+	data, err := mlp.ReadData("training.csv")
 	if err != nil {
 		panic(err)
 	}
@@ -23,8 +19,8 @@ func main() {
 	scalar.Fit(inputs)
 	scaled := scalar.Transform(inputs)
 
-	brain, err := mlp.NewClassifierFromFiles("weights_input_hidden.csv", "weights_hidden_output.csv", "bias_hidden.csv", "bias_output.csv", dummyHandler)
-	// brain, err := mlp.NewClassifier(28, 10, 6)
+	brain, err := mlp.NewClassifierFromFiles(1)
+	// brain, err := mlp.NewClassifier(28, 6, 10)
 	if err != nil {
 		panic(err)
 	}

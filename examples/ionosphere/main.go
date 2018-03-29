@@ -2,29 +2,14 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	mlp "github.com/reficul31/mlp_classifier"
 )
 
-var epochs = 5000
-
-func stringHandler(input string) string {
-	if strings.Compare(input, "g") == 0 {
-		return "1"
-	} else if strings.Compare(input, "b") == 0 {
-		return "0"
-	} else {
-		return input
-	}
-}
-
-func dummyHandler(input string) string {
-	return input
-}
+var epochs = 10
 
 func main() {
-	data, err := mlp.ReadData("ionosphere.csv", stringHandler)
+	data, err := mlp.ReadData("ionosphere.csv")
 	if err != nil {
 		panic(err)
 	}
@@ -34,8 +19,8 @@ func main() {
 	normalizer.Fit(inputs)
 	normalized := normalizer.Transform(inputs, 1, -1)
 
-	brain, err := mlp.NewClassifierFromFiles("weights_input_hidden.csv", "weights_hidden_output.csv", "bias_hidden.csv", "bias_output.csv", dummyHandler)
-	// brain, err := mlp.NewClassifier(34, 10, 1)
+	brain, err := mlp.NewClassifierFromFiles(1)
+	// brain, err := mlp.NewClassifier(34, 1, 10)
 	if err != nil {
 		panic(err)
 	}
