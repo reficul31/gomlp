@@ -141,8 +141,8 @@ func (mlp *Classifier) Predict(inputArr []float64) (int, error) {
 
 // Train is used to train a neural network
 func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
-	mlp.classes = ReturnTargetClasses(targetArr)
-	transformedTarget := TransformTargets(targetArr, mlp.classes, mlp.outputNodes)
+	mlp.Classes = ReturnTargetClasses(targetArr)
+	transformedTarget := TransformTargets(targetArr, mlp.Classes, mlp.outputNodes)
 	for iter := 0; iter < epochs; iter++ {
 		for range data {
 			index, inputArr := RandomDataSet(data)
@@ -259,8 +259,8 @@ func (mlp *Classifier) Train(data, targetArr [][]float64, epochs int) error {
 // Score return the various parameters of a Nerual Network used for checking efficiency and accuracy
 func (mlp *Classifier) Score(data [][]float64, target [][]float64) (float64, error) {
 	confusionMatrix := make([][]int, 2)
-	confusionMatrix[0] = make([]int, len(mlp.classes))
-	confusionMatrix[1] = make([]int, len(mlp.classes))
+	confusionMatrix[0] = make([]int, len(mlp.Classes))
+	confusionMatrix[1] = make([]int, len(mlp.Classes))
 	var score float64
 	for i, row := range data {
 		prediction, err := mlp.Predict(row)
@@ -268,10 +268,10 @@ func (mlp *Classifier) Score(data [][]float64, target [][]float64) (float64, err
 			return score, err
 		}
 		if prediction == int(target[i][0]) {
-			pos := FindInArray(mlp.classes, float64(prediction))
+			pos := FindInArray(mlp.Classes, float64(prediction))
 			confusionMatrix[1][pos] = confusionMatrix[1][pos] + 1
 		} else {
-			pos := FindInArray(mlp.classes, float64(prediction))
+			pos := FindInArray(mlp.Classes, float64(prediction))
 			confusionMatrix[0][pos] = confusionMatrix[0][pos] + 1
 		}
 	}

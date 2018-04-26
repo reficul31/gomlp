@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	mlp "github.com/reficul31/mlp_classifier"
 )
@@ -9,7 +10,11 @@ import (
 var epochs = 10
 
 func dummyHandler(input string) string {
-	return input
+	strFloat, err := strconv.ParseFloat(input, 64)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%0.2f", strFloat)
 }
 
 func main() {
@@ -28,11 +33,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	brain.Classes = mlp.ReturnTargetClasses(targets)
 
-	err = brain.Train(scaled, targets, epochs)
-	if err != nil {
-		panic(err)
-	}
+	// err = brain.Train(scaled, targets, epochs)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	score, err := brain.Score(scaled, targets)
 	if err != nil {
