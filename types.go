@@ -1,4 +1,4 @@
-package mlp
+package gomlp
 
 // Matrix is the Data Structure for the Matrix Operations
 type Matrix struct {

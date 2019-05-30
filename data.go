@@ -1,4 +1,4 @@
-package mlp
+package gomlp
 
 import (
 	"math/rand"

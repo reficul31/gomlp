@@ -1,4 +1,4 @@
-package mlp
+package gomlp
 
 // NewClassifier return a new pointer to the Classifier Class
 func NewClassifier(inputNodes, hiddenNodes, outputNodes int) (*Classifier, error) {
