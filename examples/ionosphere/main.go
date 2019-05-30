@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	mlp "github.com/reficul31/mlp_classifier"
+	mlp "github.com/reficul31/gomlp"
 )
 
 var epochs = 5000
